@@ -1,0 +1,11 @@
+因为table是global variable，所以当两个及以上多个线程正好在同一个table中put()时，以两个线程为
+例：
+1. error: insert() 中的插入链表操作可能会导致覆盖。eg.当线程0运行完 e->next=n; 之后发生
+context switch，线程1也执行put e->next=n 之后并继续执行 *p=e ；再切换为线程0执行 *p=e ,先
+执行 *p=e 的线程会丢失新添加的key。
+2. warning: put()中执行 e->value=value 来更新存在的key时会导致覆盖，导致不同的线程丢失率不
+同。比如两个线程都要修改同一个 entry, 但由于调度先后执行 e->value=value ，则先执行该语句
+的会丢失更新的key，另一线程得以保留。因此两个线程对key的丢失不同。
+3. error: 两个线程一个在执行 put() 时恰好执行到 insert(key,value,&table,table[i]) 时，切
+换到另一个线程执行 insert() 中的 *p=e* ，如果针对同一个table，再切换回来会导致 put() 中
+的 insert(args) 中的 table 变化，导致key丢失。
